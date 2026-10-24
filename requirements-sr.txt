@@ -1,0 +1,8 @@
+-r requirements.txt
+click==8.1.8
+filelock==3.19.1
+juliacall==0.9.24
+juliapkg==0.1.17
+pysr==1.5.9
+semver==3.0.4
+typing_extensions==4.16.0
