@@ -8,17 +8,32 @@
 
 ## Run
 
-Use Python 3.9. From the project folder:
+Use Python 3.12. In Anaconda Prompt or a Conda-enabled PowerShell:
+
+```powershell
+cd C:\Work\temp\concrete_symbolic_regression
+conda create -n SR python=3.12 pip -y
+conda activate SR
+python -m pip install --upgrade pip
+python -m pip install -r requirements-sr.txt
+python -m pip check
+```
+
+If `SR` already exists, use a new name such as `SR312` in both Conda commands.
+`requirements-sr.txt` includes the base dependencies and PySR 2.7.2.
+For saved-model evaluation and linear regression only, install `requirements.txt`.
+
+Alternatively, from the project folder:
 
 ```bash
-python3.9 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 python symbolic_regression.py
 python linear_regression.py
 ```
 
-On Windows, create the environment with `py -3.9 -m venv .venv` and use
+On Windows, create the environment with `py -3.12 -m venv .venv` and use
 `.venv\Scripts\python.exe` instead of activating it.
 
 Defaults evaluate the saved models and write to `results/<model>/`. Each run writes:
@@ -40,8 +55,12 @@ python -m pip install -r requirements-sr.txt
 python symbolic_regression.py --train
 ```
 
-SR uses seed 42, serial execution, Julia 1.10.10, and SymbolicRegression.jl 1.11.3.
-Julia is installed on first training; saved-model evaluation needs no Julia.
+SR uses PySR 2.7.2, seed 42, and serial execution. PySR manages compatible
+Julia and SymbolicRegression.jl versions; the old backend overrides are removed.
+New searches can produce different equations after a PySR/backend upgrade, even
+with the same seed. Archive the resolved Julia environment as well as the Python
+requirements when exact search reproduction is needed.
+Julia is installed on first training (internet access required); saved-model evaluation needs no Julia.
 On macOS, serial training disables Julia signal handling to avoid an Apple Python conflict.
 PySR prints warnings about these intentional single-thread settings.
 

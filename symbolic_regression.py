@@ -17,9 +17,7 @@ def train(args, X, y):
     os.environ.setdefault('JULIA_NUM_PRECOMPILE_TASKS', '1')
     if sys.platform == 'darwin':
         os.environ.setdefault('PYTHON_JULIACALL_HANDLE_SIGNALS', 'no')
-    import juliapkg
-    juliapkg.require_julia('=1.10.10')
-    juliapkg.add('SymbolicRegression', uuid='8254be44-1295-4e6a-a16d-46603ac705cb', version='=1.11.3')
+    # Let PySR provision compatible Julia and SymbolicRegression.jl versions.
     from pysr import PySRRegressor
 
     train_indices, test_indices = split_indices(X)
