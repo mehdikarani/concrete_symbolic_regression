@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 
 import matplotlib
@@ -12,9 +13,10 @@ import pandas as pd
 import sympy as sp
 from scipy.stats import pearsonr
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GroupShuffleSplit, train_test_split
 
 ROOT = Path(__file__).resolve().parent
+STUDY = 'Studies'
 TARGET = 'Compressive_strength_Mpa'
 FEATURES = ['SiO2', 'Al2O3', 'Fe2O3', 'CaO', 'w_c', 'Fineness_modulus',
             'Portland_cement_kg_m3', 'Fine_aggregate_kg_m3', 'Iron_tailing_kg_m3',
@@ -23,15 +25,30 @@ plt.rcParams.update({'font.family': 'DejaVu Sans', 'svg.hashsalt': 'concrete'})
 
 
 def arguments(name):
-    parser = argparse.ArgumentParser(description='Original features, no PCA. Replay saved results by default.')
+    description = ('Original features, no PCA. Train a revised model by default.'
+                   if name == 'symbolic_regression'
+                   else 'Original features, no PCA. Replay saved results by default.')
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument('--data', type=Path, default=ROOT / 'data.xlsx')
-    parser.add_argument('--model', type=Path, default=ROOT / 'models' / f'{name}.json')
-    parser.add_argument('--output', type=Path, default=ROOT / 'results' / name)
+    default_model = None if name == 'symbolic_regression' else ROOT / 'models' / f'{name}.json'
+    parser.add_argument('--model', type=Path, default=default_model)
+    parser.add_argument('--output', type=Path)
     parser.add_argument('--train', action='store_true')
     if name == 'symbolic_regression':
+        parser.add_argument('--legacy', action='store_true',
+                            help='Replay the published historical symbolic-regression model.')
         parser.add_argument('--iterations', type=int, default=800)
-        parser.add_argument('--maxsize', type=int, default=120)
-    return parser.parse_args()
+        parser.add_argument('--maxsize', type=int, default=50)
+        default_workers = min(8, max(1, (os.cpu_count() or 2) - 1))
+        parser.add_argument('--workers', type=int, default=default_workers,
+                            help='Julia threads; use 1 for deterministic serial training.')
+    args = parser.parse_args()
+    if args.output is None:
+        if name == 'symbolic_regression' and args.legacy:
+            args.output = ROOT / 'results' / 'legacy' / name
+        else:
+            args.output = ROOT / 'results' / name
+    return args
 
 
 def read_data(path):
@@ -41,11 +58,19 @@ def read_data(path):
     return data[FEATURES].to_numpy(), data[TARGET].to_numpy()
 
 
+def read_groups(path):
+    """Return study identifiers for study-level splitting."""
+    return pd.read_excel(path, usecols=[STUDY])[STUDY].to_numpy()
+
+
 def checksum(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def split_indices(X):
+def split_indices(X, groups=None):
+    if groups is not None:
+        splitter = GroupShuffleSplit(n_splits=1, test_size=0.20, random_state=42)
+        return next(splitter.split(X, groups=groups))
     return train_test_split(np.arange(len(X)), test_size=0.15, random_state=42)
 
 
@@ -54,8 +79,10 @@ def save_model(path, model):
 
 
 def make_model(data, expression, scaler, train, test, settings):
+    scale = np.ones(len(FEATURES)) if scaler is None else scaler.scale_
+    offset = np.zeros(len(FEATURES)) if scaler is None else scaler.min_
     return {'features': FEATURES, 'data_sha256': checksum(data), 'expression': str(expression),
-            'scale': scaler.scale_.tolist(), 'offset': scaler.min_.tolist(),
+            'scale': scale.tolist(), 'offset': offset.tolist(),
             'train_indices': train.tolist(), 'test_indices': test.tolist(), 'settings': settings}
 
 
@@ -66,9 +93,9 @@ def load_model(path, data):
     return model
 
 
-def equation(expression):
-    symbols = sp.symbols(' '.join(FEATURES))
-    expression = sp.sympify(expression, locals=dict(zip(FEATURES, symbols)))
+def equation(expression, features=FEATURES):
+    symbols = sp.symbols(' '.join(features))
+    expression = sp.sympify(expression, locals=dict(zip(features, symbols)))
     function = sp.lambdify(symbols, expression, 'numpy')
 
     def predict(values):
@@ -160,8 +187,6 @@ def write_equation(model, expression, symbols, output):
 
 def report(model, X, y, output):
     output.mkdir(parents=True, exist_ok=True)
-    if model['settings'].get('warning'):
-        print(model['settings']['warning'])
     expression, symbols, predict = equation(model['expression'])
     Z = X * model['scale'] + model['offset']
     prediction_report(y, Z, model, predict, output)
