@@ -8,17 +8,32 @@
 
 ## Run
 
-Use Python 3.9. From the project folder:
+Use Python 3.12. In Anaconda Prompt or a Conda-enabled PowerShell:
+
+```powershell
+cd C:\Work\temp\concrete_symbolic_regression
+conda create -n SR python=3.12 pip -y
+conda activate SR
+python -m pip install --upgrade pip
+python -m pip install -r requirements-sr.txt
+python -m pip check
+```
+
+If `SR` already exists, use a new name such as `SR312` in both Conda commands.
+`requirements-sr.txt` includes the base dependencies and PySR 2.7.2.
+For saved-model evaluation and linear regression only, install `requirements.txt`.
+
+Alternatively, from the project folder:
 
 ```bash
-python3.9 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 python symbolic_regression.py --legacy
 python linear_regression.py
 ```
 
-On Windows, create the environment with `py -3.9 -m venv .venv` and use
+On Windows, create the environment with `py -3.12 -m venv .venv` and use
 `.venv\Scripts\python.exe` instead of activating it.
 
 `linear_regression.py` evaluates its saved model by default. `symbolic_regression.py`
@@ -41,14 +56,18 @@ python -m pip install -r requirements-sr.txt
 python symbolic_regression.py
 ```
 
-SR uses Julia 1.10.10 and SymbolicRegression.jl 1.11.3. Training uses
+SR uses PySR 2.7.2, which manages compatible Julia and SymbolicRegression.jl
+versions. Training uses
 shared-memory multithreading by default, capped at eight threads to avoid overwhelming a
 laptop. Use `--workers` to choose a different thread count or `--workers 1` for deterministic
 serial execution with seed 42. Parallel searches are stochastic because PySR only guarantees
 seeded, bit-for-bit deterministic behavior in serial mode.
 The maximum expression size is warmed up over the first quarter of the search to spend less
 time evaluating very large expressions before simpler candidates have evolved.
-Julia is installed on first training; saved-model evaluation needs no Julia.
+New searches can produce different equations after a PySR/backend upgrade, even
+with the same seed. Archive the resolved Julia environment as well as the Python
+requirements when exact search reproduction is needed.
+Julia is installed on first training (internet access required); saved-model evaluation needs no Julia.
 
 Revised SR training follows the original workflow's 85/15 random row split with seed 42,
 but fits min-max scaling on the training rows only. Test observations do not participate in

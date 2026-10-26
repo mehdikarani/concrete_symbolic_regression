@@ -18,7 +18,7 @@ pytz==2026.5
 scikit-learn==1.6.1
 scipy==1.13.1
 six==1.17.0
-sympy==1.13.3
+sympy==1.14.0
 threadpoolctl==3.7.0
 tzdata==2026.5
 zipp==3.23.1

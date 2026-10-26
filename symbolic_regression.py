@@ -162,10 +162,7 @@ def train(args, X, y):
     os.environ['PYTHON_JULIACALL_THREADS'] = str(args.workers)
     warnings.filterwarnings(
         'ignore', message='PYTHON_JULIACALL_THREADS environment variable.*')
-    import juliapkg
-    juliapkg.require_julia('=1.10.10')
-    juliapkg.add('SymbolicRegression', uuid='8254be44-1295-4e6a-a16d-46603ac705cb',
-                 version='=1.11.3')
+    # Let PySR provision compatible Julia and SymbolicRegression.jl versions.
     from pysr import PySRRegressor
 
     train_indices, test_indices = split_indices(X)
