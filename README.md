@@ -7,11 +7,17 @@ of concrete containing iron tailings using linear, additive quadratic polynomial
 and symbolic regression. Models relate strength to oxide composition, water–binder
 ratio, fineness modulus, and mixture quantities using a reproducible 85/15
 training/test row split and feature scaling fitted on training data. Symbolic
-regression searches for explicit equations with PySR, then selects equations
-using training performance, feature coverage, and complexity before reporting
-test performance. Analytical sensitivities and composition-constrained
-main-effect curves describe model behavior and its robustness across selected
-equations.
+regression searches for explicit equations with PySR. Selection uses training
+rows only and requires polynomial equations of degree at most nine containing
+at least seven input features. Under the current command-line policy, candidates
+within 15% of the lowest eligible study-weighted training MSE form the primary
+pool; the equation with the highest PySR score is selected, with ties resolved
+by lower training MSE and then lower complexity. Robustness analysis compares
+up to six equations spanning distinct complexities within 25% of the lowest
+eligible training MSE, including the primary equation. Equations are frozen
+before test performance is reported. Analytical sensitivities and
+composition-constrained main-effect curves describe model behavior and its
+robustness across the selected equations.
 
 ## Project structure
 
