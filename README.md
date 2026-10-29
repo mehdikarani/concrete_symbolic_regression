@@ -1,128 +1,40 @@
 # Concrete strength regression
 
-- `symbolic_regression.py`: symbolic regression on the ten original features, without PCA.
-- `linear_regression.py`: linear regression on the same features and split.
-- `analysis_common.py`: shared data loading, statistics, and plotting.
-- `data.xlsx`: the dataset. `models/`: two saved equations and their preprocessing.
-- `tests/`: reference-result and portability checks.
+## Abstract
 
-## Run
+This project investigates interpretable prediction of the compressive strength
+of concrete containing iron tailings using linear, additive quadratic polynomial,
+and symbolic regression. Models relate strength to oxide composition, water–binder
+ratio, fineness modulus, and mixture quantities using a reproducible 85/15
+training/test row split and feature scaling fitted on training data. Symbolic
+regression searches for explicit equations with PySR, then selects equations
+using training performance, feature coverage, and complexity before reporting
+test performance. Analytical sensitivities and composition-constrained
+main-effect curves describe model behavior and its robustness across selected
+equations.
 
-Use Python 3.12. In Anaconda Prompt or a Conda-enabled PowerShell:
+## Project structure
 
-```powershell
-cd C:\Work\temp\concrete_symbolic_regression
-conda create -n SR python=3.12 pip -y
-conda activate SR
-python -m pip install --upgrade pip
-python -m pip install -r requirements-sr.txt
-python -m pip check
+```text
+concrete_symbolic_regression/
+├── data.xlsx                   # Concrete mixture and strength dataset
+├── data_preprocessing.py       # Data loading, splitting, scaling, and study weights
+├── linear_regression.py        # Linear baseline
+├── polynomial_regression.py    # Additive quadratic baseline
+├── symbolic_regression.py      # PySR equation search
+├── sr_equation_selection.py    # Equation audit, selection, and evaluation
+├── robustness_analysis.py      # Main-effect and sensitivity robustness
+├── sr_plotting.py              # Selection and robustness figures
+├── analysis_common.py          # Shared model fitting, metrics, and reporting
+├── requirements.txt            # Python dependency pins
+├── models/                     # Saved baseline models
+├── results/                    # Generated models, tables, and plots
+│   ├── linear_regression/
+│   ├── polynomial_regression/
+│   └── symbolic_regression/
+│       ├── search/             # Timestamped search runs and Pareto candidates
+│       └── selection/          # Frozen equations and evaluation reports
+│           └── <run>/robustness_analysis/
+│               └── sensitivity/ # Sensitivity tables and figures
+└── Manuscript/                 # Manuscript and reviewer-response materials
 ```
-
-If `SR` already exists, use a new name such as `SR312` in both Conda commands.
-`requirements-sr.txt` includes the base dependencies and PySR 2.7.2.
-For saved-model evaluation and linear regression only, install `requirements.txt`.
-
-Alternatively, from the project folder:
-
-```bash
-python3.12 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-python symbolic_regression.py --legacy
-python linear_regression.py
-```
-
-On Windows, create the environment with `py -3.12 -m venv .venv` and use
-`.venv\Scripts\python.exe` instead of activating it.
-
-`linear_regression.py` evaluates its saved model by default. `symbolic_regression.py`
-trains a new model with the revised selection strategy by default. Each run writes:
-
-- `metrics.csv`: MSE, RMSE, MAE, R², Pearson r and p-value.
-- `predictions.csv`: train/test predictions, row indices, and residuals.
-- `sensitivity.csv`: mean absolute analytical derivatives in scaled and original units.
-- `predictions.svg`, `main_effects.svg`, `sensitivity.svg`.
-- `equation.txt`: equation expressed in original input units.
-
-Main-effect curves vary one feature while holding the others at training medians.
-Sensitivity is local derivative sensitivity, not a causal or global importance measure.
-
-## Train
-
-```bash
-python linear_regression.py --train
-python -m pip install -r requirements-sr.txt
-python symbolic_regression.py
-```
-
-SR uses PySR 2.7.2, which manages compatible Julia and SymbolicRegression.jl
-versions. Training uses
-shared-memory multithreading by default, capped at eight threads to avoid overwhelming a
-laptop. Use `--workers` to choose a different thread count or `--workers 1` for deterministic
-serial execution with seed 42. Parallel searches are stochastic because PySR only guarantees
-seeded, bit-for-bit deterministic behavior in serial mode.
-The maximum expression size is warmed up over the first quarter of the search to spend less
-time evaluating very large expressions before simpler candidates have evolved.
-New searches can produce different equations after a PySR/backend upgrade, even
-with the same seed. Archive the resolved Julia environment as well as the Python
-requirements when exact search reproduction is needed.
-Julia is installed on first training (internet access required); saved-model evaluation needs no Julia.
-
-Revised SR training follows the original workflow's 85/15 random row split with seed 42,
-but fits min-max scaling on the training rows only. Test observations do not participate in
-preprocessing, search, physical auditing, or equation selection. Training writes
-`model.json`, `candidate_equations.csv`, and the final reports under
-`results/symbolic_regression/`.
-
-PySR fits the ten original variables directly. Every eligible equation must contain all ten
-features. The search permits addition, subtraction, multiplication, and squares, while
-operator constraints and an exact SymPy audit restrict accepted equations to polynomial
-degree two, single-variable squares, and at most five pairwise interaction terms. Nested
-higher-order interactions are rejected.
-
-Physical checks are restricted to interpolation: observed training rows and one-at-a-time
-sweeps between each feature's training minimum and maximum. Equations must remain finite and
-nonnegative and preserve a nonincreasing water/binder response in that domain. There is no
-extrapolation buffer or upper prediction ceiling. Among eligible equations, selection uses
-the highest PySR accuracy-complexity score, with lower complexity and training loss as
-tie-breakers. Test metrics are calculated only after the equation has been selected.
-
-The PySR hall of fame is retained under `results/symbolic_regression/search_run/`, and the
-complete audit is written before selection. If no equation passes, the program exits with a
-concise message while preserving the search and audit.
-
-Options: `--data`, `--model`, `--output`; SR also accepts `--iterations` (default 800),
-`--maxsize` (default 50), and `--workers`. The search uses 32-bit evaluation and at least two
-populations per worker. PySR displays its progress bar and evolving equation table during
-training. To evaluate a newly trained SR model without starting another search:
-
-```bash
-python symbolic_regression.py --model results/symbolic_regression/model.json
-```
-
-The published historical model and its outputs are retained under `models/legacy/` and
-`results/legacy/`. Reproduce them without starting PySR using:
-
-```bash
-python symbolic_regression.py --legacy
-```
-
-## Reproduce and move
-
-Copy the source files, requirements files, dataset, `models/`, and `tests/`.
-Recreate `.venv` on the destination; do not copy installed dependencies or caches.
-Default paths are relative to the scripts, so execution works from any directory.
-
-Saved-model replay preserves the reference results (test R²: SR 0.81389149,
-LR 0.55898703). Across devices, small floating-point differences are possible.
-The legacy SR model used full-dataset scaling and test-based equation selection; its saved
-metrics are historical reproduction, not an unbiased holdout comparison.
-New SR training corrects those choices and will produce a different equation.
-
-```bash
-python -m unittest discover -s tests -v
-```
-
-Tests check reference metrics, repeatable outputs after relocation, LR refitting,
-analytical derivatives, changed-data rejection, and the SR candidate-selection gates.

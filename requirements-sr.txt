@@ -1,3 +1,0 @@
--r requirements.txt
-# Let PySR resolve compatible Julia bridge dependencies (juliacall/juliapkg).
-pysr==2.7.2
