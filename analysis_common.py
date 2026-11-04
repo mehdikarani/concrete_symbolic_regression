@@ -17,9 +17,6 @@ from data_preprocessing import FEATURES, ROOT, TARGET, SPLIT_SEED, TRAIN_RATIO, 
 SYMBOLS = sp.symbols(' '.join(FEATURES))
 SYMBOL_MAP = dict(zip(FEATURES, SYMBOLS))
 
-OXIDE_FEATURES = ('SiO2', 'Al2O3', 'Fe2O3', 'CaO')
-OXIDE_INDICES = [FEATURES.index(f) for f in OXIDE_FEATURES]
-
 DISPLAY_NAMES = {
     'SiO2': 'SiO$_2$',
     'Al2O3': 'Al$_2$O$_3$',
@@ -189,19 +186,14 @@ def report_predictions(y, Z, model, predict, output):
 
 
 def main_effect_grid(X, train_indices, j):
-    """Build evaluation grid for feature j, keeping oxide percentages summing to 100%."""
+    """Vary feature j while holding all other features at their training medians."""
     baseline = np.median(X[train_indices], axis=0).copy()
-    baseline[OXIDE_INDICES] *= 100.0 / baseline[OXIDE_INDICES].sum()
 
     low, high = float(X[:, j].min()), float(X[:, j].max())
     grid = np.linspace(low + 0.05 * (high - low), low + 0.95 * (high - low), 200)
     values = np.tile(baseline, (len(grid), 1))
     values[:, j] = grid
 
-    if j in OXIDE_INDICES:
-        others = [idx for idx in OXIDE_INDICES if idx != j]
-        weights = baseline[others] / baseline[others].sum()
-        values[:, others] = np.outer(100.0 - grid, weights)
     return grid, values
 
 

@@ -15,9 +15,9 @@ pool; the equation with the highest PySR score is selected, with ties resolved
 by lower training MSE and then lower complexity. Robustness analysis compares
 up to six equations spanning distinct complexities within 25% of the lowest
 eligible training MSE, including the primary equation. Equations are frozen
-before test performance is reported. Analytical sensitivities and
-composition-constrained main-effect curves describe model behavior and its
-robustness across the selected equations.
+before test performance is reported. Analytical partial derivatives and
+main-effect curves, varying one feature while holding the others at their training
+medians, describe model behavior and its robustness across the selected equations.
 
 ## Project structure
 

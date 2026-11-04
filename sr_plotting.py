@@ -64,7 +64,7 @@ def plot_main_effect_robustness(curves, candidates, selected, output):
     export_plot(fig, Path(output) / 'main_effect_robustness')
 
 
-def plot_sensitivity_robustness(gradients, weights, importance, ranks, candidates, selected, output, mode):
+def plot_sensitivity_robustness(gradients, weights, importance, ranks, candidates, selected, output):
     order = np.argsort(-importance[0], kind='stable')
     labels = [DISPLAY_NAMES_SCALED[FEATURES[j]] for j in order]
     equation_labels = [equation_label(r, candidates.loc[idx, 'complexity']).replace(' (', '\n(')
@@ -81,7 +81,7 @@ def plot_sensitivity_robustness(gradients, weights, importance, ranks, candidate
     colorbar = fig.colorbar(im, ax=ax, pad=0.02)
     colorbar.set_label('Relative sensitivity (%)', fontsize=16)
     colorbar.ax.tick_params(labelsize=14)
-    export_plot(fig, output / f'{mode}_importance_heatmap')
+    export_plot(fig, output / 'partial_importance_heatmap')
 
     fig, ax = plt.subplots(figsize=(11, 7), layout='constrained')
     y = np.arange(len(order))
@@ -98,7 +98,7 @@ def plot_sensitivity_robustness(gradients, weights, importance, ranks, candidate
     ax.legend(loc='upper right', ncol=2, frameon=True, fontsize=14,
               facecolor='white', edgecolor='#777777', framealpha=1,
               borderpad=0.7, labelspacing=0.5, columnspacing=1.2)
-    export_plot(fig, output / f'{mode}_rank_stability')
+    export_plot(fig, output / 'partial_rank_stability')
 
     fig, axes = plt.subplots(5, 2, figsize=(11, 16), layout='constrained')
     fig.get_layout_engine().set(wspace=0.10, rect=(0, 0.095, 1, 0.905))
@@ -125,7 +125,7 @@ def plot_sensitivity_robustness(gradients, weights, importance, ranks, candidate
                ncol=3, frameon=True, fontsize=15, edgecolor='#777777',
                facecolor='white', framealpha=1, borderpad=0.8,
                borderaxespad=0.5, labelspacing=0.6, columnspacing=1.5)
-    export_plot(fig, output / f'{mode}_signed_sensitivity')
+    export_plot(fig, output / 'partial_signed_sensitivity')
 
 
 def plot_selection(candidates, selected, comparison, output):
