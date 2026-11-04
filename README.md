@@ -24,14 +24,15 @@ medians, describe model behavior and its robustness across the selected equation
 ```text
 concrete_symbolic_regression/
 ├── data.xlsx                   # Concrete mixture and strength dataset
-├── data_preprocessing.py       # Data loading, splitting, scaling, and study weights
-├── linear_regression.py        # Linear baseline
-├── polynomial_regression.py    # Additive quadratic baseline
-├── symbolic_regression.py      # PySR equation search
-├── sr_equation_selection.py    # Equation audit, selection, and evaluation
-├── robustness_analysis.py      # Main-effect and sensitivity robustness
-├── sr_plotting.py              # Selection and robustness figures
-├── analysis_common.py          # Shared model fitting, metrics, and reporting
+├── scripts/                    # Python entry points and shared analysis code
+│   ├── data_preprocessing.py   # Data loading, splitting, scaling, and study weights
+│   ├── linear_regression.py    # Linear baseline
+│   ├── polynomial_regression.py # Additive quadratic baseline
+│   ├── symbolic_regression.py  # PySR equation search
+│   ├── sr_equation_selection.py # Equation audit, selection, and evaluation
+│   ├── robustness_analysis.py  # Main-effect and sensitivity robustness
+│   ├── sr_plotting.py          # Selection and robustness figures
+│   └── analysis_common.py      # Shared model fitting, metrics, and reporting
 ├── requirements.txt            # Python dependency pins
 ├── models/                     # Saved baseline models
 ├── results/                    # Generated models, tables, and plots
@@ -44,3 +45,21 @@ concrete_symbolic_regression/
 │               └── sensitivity/ # Sensitivity tables and figures
 └── Manuscript/                 # Manuscript and reviewer-response materials
 ```
+
+## Running the analyses
+
+Run the scripts from the project root using your Python environment:
+
+```bash
+python scripts/linear_regression.py
+python scripts/polynomial_regression.py
+python scripts/symbolic_regression.py --help
+python scripts/sr_equation_selection.py --help
+```
+
+To search for symbolic equations, run `python scripts/symbolic_regression.py`.
+Then run `python scripts/sr_equation_selection.py` to select equations from the
+latest completed search. The search requires PySR and its Julia environment.
+
+Dataset, saved-model, and result paths resolve relative to the project root,
+regardless of the working directory used to launch a script.
