@@ -398,10 +398,8 @@ def report(model, X, y, output):
     print(f'\nAll results saved to: {output.resolve()}')
 
 
-def run_baseline(data_path, model_path, output_dir, degree):
+def run_baseline(data_path, output_dir, degree):
     data = prepare_data(data_path)
     model = fit_polynomial_model(data, degree=degree)
     report(model, data.X, data.y, output_dir)
-    Path(model_path).parent.mkdir(parents=True, exist_ok=True)
-    save_model(model_path, model)
     save_model(Path(output_dir) / 'model.json', model)

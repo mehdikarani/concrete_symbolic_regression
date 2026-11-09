@@ -34,7 +34,6 @@ concrete_symbolic_regression/
 │   ├── sr_plotting.py          # Selection and robustness figures
 │   └── analysis_common.py      # Shared model fitting, metrics, and reporting
 ├── requirements.txt            # Python dependency pins
-├── models/                     # Saved baseline models
 ├── results/                    # Generated models, tables, and plots
 │   ├── linear_regression/
 │   ├── polynomial_regression/
